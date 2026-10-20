@@ -4,7 +4,7 @@
    - Mosaicos del mapa: siempre de la red (sin conexión el mapa queda gris, pero la lista de lugares sigue funcionando).
    Al cambiar archivos de la app, subir el número de VERSION para renovar la copia guardada. */
 
-const VERSION = 'ecoalerta-v11';
+const VERSION = 'ecoalerta-v14';
 
 const ARCHIVOS = [
   './',
@@ -14,6 +14,7 @@ const ARCHIVOS = [
   'manifest.webmanifest',
   'icons/icon-192.png',
   'icons/icon-512.png',
+  'icons/mark.svg',
   'icons/apple-touch-icon.png',
   'data/localidades.json',
   'data/tornquist.json',

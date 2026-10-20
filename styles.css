@@ -103,14 +103,13 @@ button { color: inherit; }
 .bienvenida-caja > :nth-child(6) { animation-delay: .3s; }
 .bienvenida-caja > :nth-child(n+7) { animation-delay: .36s; }
 
-.logo-grande, .logo-marca {
-  display: inline-grid;
-  place-items: center;
-  color: #fff;
-  background: var(--abeto);
-}
-.logo-grande { width: 48px; height: 48px; margin-bottom: 36px; font-size: 26px; border-radius: 14px; }
-.logo-marca { width: 30px; height: 30px; font-size: 17px; border-radius: 9px; }
+.nombre { font-weight: 700; letter-spacing: -.035em; color: var(--abeto); }
+.nombre .eco { font-weight: 500; color: var(--c-verde); }
+.logo-grande { display: flex; align-items: center; gap: 12px; margin-bottom: 36px; }
+.logo-grande img { display: block; width: 52px; height: 52px; }
+.nombre-grande { font-size: 36px; line-height: 1; }
+.logo-marca { display: inline-flex; line-height: 0; }
+.logo-marca img { display: block; width: 28px; height: 28px; }
 
 .bienvenida h1 { margin: 0; font-size: 38px; font-weight: 600; line-height: 1.08; letter-spacing: -.03em; }
 .sub { max-width: 32ch; margin: 12px 0 34px; color: var(--pizarra); }
@@ -181,7 +180,7 @@ select:focus-visible { outline: 0; border-color: var(--abeto); box-shadow: 0 0 0
 }
 .cabecera.con-borde { box-shadow: 0 1px 0 var(--linea); }
 .marca { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.marca b { font-size: 17px; font-weight: 600; letter-spacing: -.01em; }
+.marca .nombre { font-size: 19px; }
 .chip {
   display: inline-flex;
   align-items: center;

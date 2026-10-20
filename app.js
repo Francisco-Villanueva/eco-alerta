@@ -621,8 +621,9 @@ async function iniciar() {
     return;
   }
 
-  pintar($('#logo-bienvenida'), ico('hoja'));
-  pintar($('#logo-cabecera'), ico('hoja'));
+  const nombre = (clase) => el('span', { class: `nombre ${clase}` }, el('span', { class: 'eco' }, 'Eco'), 'Alerta');
+  pintar($('#logo-bienvenida'), el('img', { src: 'icons/mark.svg', alt: '', width: '52', height: '52' }), nombre('nombre-grande'));
+  pintar($('#logo-cabecera'), el('img', { src: 'icons/mark.svg', alt: '', width: '28', height: '28' }));
   pintar($('#nav'), el('span', { class: 'nav-ind', 'aria-hidden': 'true' }), NAV.map(([tab, icono, texto]) =>
     el('button', { 'data-tab': tab, onclick: () => irA(tab) }, ico(icono), texto)));
   window.addEventListener('scroll', () => $('#cabecera').classList.toggle('con-borde', window.scrollY > 4), { passive: true });
