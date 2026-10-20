@@ -24,6 +24,7 @@ const SVG = {
   reloj: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
   der: '<path d="M9 6l6 6-6 6"/>',
   abajo: '<path d="M6 9l6 6 6-6"/>',
+  descargar: '<path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/>',
   galpon: '<path d="M3 21V9l9-6 9 6v12"/><path d="M8 21v-7h8v7"/>',
 };
 
@@ -414,6 +415,15 @@ function renderAjustes() {
       el('div', {}, el('h4', {}, 'Recordatorios'), el('p', {}, recordatorioActivo() ? 'Activados: te avisamos antes de la recolección.' : 'Desactivados.')),
       el('button', { class: 'btn btn-peq', onclick: alternarRecordatorio }, recordatorioActivo() ? 'Desactivar' : 'Activar')),
     el('div', { class: 'card' },
+      el('h4', {}, 'Instalar la app'),
+      estaInstalada()
+        ? el('p', {}, '✅ Ya la tenés instalada en este dispositivo.')
+        : [
+            el('p', {}, el('b', {}, 'Android (Chrome): '), 'tocá el menú ⋮ y elegí «Instalar app» o «Agregar a la pantalla principal».'),
+            el('p', {}, el('b', {}, 'iPhone (Safari): '), 'tocá el botón Compartir y elegí «Agregar a inicio».'),
+            eventoInstalacion && el('button', { class: 'btn btn-peq btn-icono', style: 'margin-top:10px', onclick: instalarApp }, ico('descargar'), 'Instalar ahora'),
+          ]),
+    el('div', { class: 'card' },
       el('h4', {}, 'Acerca de EcoAlerta'),
       el('p', {}, 'Prototipo escolar. Los datos de cada localidad se cargaron manualmente y las ubicaciones del mapa son aproximadas. Los recordatorios funcionan con la app abierta.')));
 }
@@ -442,6 +452,7 @@ function mostrarApp() {
   estado.filtroMapa = null;
   estado.busqueda = '';
   irA('inicio');
+  setTimeout(evaluarToastInstalar, 2500);
 }
 
 /* ---------- bienvenida ---------- */
@@ -506,3 +517,54 @@ async function iniciar() {
 }
 
 iniciar();
+
+/* ---------- PWA: service worker y aviso de instalación ---------- */
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
+
+const SIETE_DIAS = 7 * 24 * 60 * 60 * 1000;
+let eventoInstalacion = null;
+
+const estaInstalada = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+const esIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+function ocultarToast() {
+  const t = $('#toast-instalar');
+  if (t) t.remove();
+}
+
+async function instalarApp() {
+  if (!eventoInstalacion) return;
+  eventoInstalacion.prompt();
+  try { await eventoInstalacion.userChoice; } catch (e) { /* ignorar */ }
+  eventoInstalacion = null;
+  ocultarToast();
+}
+
+function evaluarToastInstalar() {
+  if ($('#toast-instalar') || $('#principal').hidden || estaInstalada()) return;
+  if (!eventoInstalacion && !esIOS()) return;
+  if (Date.now() - Number(leer('instalarDescartado') || 0) < SIETE_DIAS) return;
+
+  const descartar = () => { guardar('instalarDescartado', String(Date.now())); ocultarToast(); };
+  const texto = eventoInstalacion
+    ? 'Tenela en tu pantalla de inicio y usala sin abrir el navegador.'
+    : 'Tocá Compartir y elegí «Agregar a inicio».';
+
+  document.body.append(el('div', { id: 'toast-instalar', class: 'toast', role: 'status' },
+    el('img', { src: 'icons/icon-192.png', alt: '', width: '44', height: '44' }),
+    el('div', { class: 'toast-texto' }, el('b', {}, 'Instalá EcoAlerta'), el('span', {}, texto)),
+    el('div', { class: 'toast-acciones' },
+      eventoInstalacion && el('button', { class: 'btn btn-peq', onclick: instalarApp }, 'Instalar'),
+      el('button', { class: 'toast-cerrar', onclick: descartar }, 'Ahora no'))));
+}
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  eventoInstalacion = e;
+  setTimeout(evaluarToastInstalar, 2500);
+});
+
+window.addEventListener('appinstalled', () => { eventoInstalacion = null; ocultarToast(); });
