@@ -4,7 +4,7 @@
    - Mosaicos del mapa: siempre de la red (sin conexión el mapa queda gris, pero la lista de lugares sigue funcionando).
    Al cambiar archivos de la app, subir el número de VERSION para renovar la copia guardada. */
 
-const VERSION = 'ecoalerta-v9';
+const VERSION = 'ecoalerta-v11';
 
 const ARCHIVOS = [
   './',
@@ -21,7 +21,7 @@ const ARCHIVOS = [
 ];
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(VERSION).then((c) => c.addAll(ARCHIVOS)).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(VERSION).then((c) => c.addAll(ARCHIVOS.map((u) => new Request(u, { cache: 'reload' })))).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', (e) => {
@@ -40,7 +40,7 @@ self.addEventListener('fetch', (e) => {
 
   if (url.origin === self.location.origin) {
     e.respondWith(
-      fetch(req)
+      fetch(req, { cache: 'no-cache' })
         .then((resp) => {
           const copia = resp.clone();
           caches.open(VERSION).then((c) => c.put(req, copia));

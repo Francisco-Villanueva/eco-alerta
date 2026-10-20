@@ -105,14 +105,17 @@ function proximasRecolecciones(loc, zona) {
     if (dia < 0) continue;
     const [hh, mm] = (r.horario || '00:00').split(':').map(Number);
     const [fh, fm] = (r.horario_fin || r.horario || '00:00').split(':').map(Number);
-    const [ah, am] = ((r.recordatorio && r.recordatorio.hora) || '20:00').split(':').map(Number);
-    const diasAntes = r.recordatorio && r.recordatorio.dias_antes != null ? r.recordatorio.dias_antes : 1;
+    // "recordatorio" puede ser un objeto o una lista de objetos (varios avisos para la misma recolección).
+    const configAvisos = [].concat(r.recordatorio || {});
     for (let n = 0; n < 8; n++) {
       const f = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() + n, hh, mm);
       const fin = new Date(f.getFullYear(), f.getMonth(), f.getDate(), fh, fm);
       if (f.getDay() === dia && fin >= ahora) {
-        const avisoDesde = new Date(f.getFullYear(), f.getMonth(), f.getDate() - diasAntes, ah, am);
-        res.push({ ...r, fecha: f, fin, avisoDesde });
+        const avisos = configAvisos.map((c) => {
+          const [ah, am] = (c.hora || '20:00').split(':').map(Number);
+          return new Date(f.getFullYear(), f.getMonth(), f.getDate() - (c.dias_antes != null ? c.dias_antes : 1), ah, am);
+        }).sort((a, b) => a - b);
+        res.push({ ...r, fecha: f, fin, avisos, avisoDesde: avisos[0] });
         break;
       }
     }
@@ -175,22 +178,34 @@ function cuandoAvisamos(r) {
 
 const enVentanaAviso = (r) => new Date() >= r.avisoDesde;
 
-let temporizadorAviso = null;
+let temporizadoresAviso = [];
 
-/* Con la app abierta: avisa al llegar la hora del recordatorio (o enseguida, si ya pasó). */
+function avisosEnviados() {
+  try { return JSON.parse(leer('avisosEnviados') || '[]'); } catch (e) { return []; }
+}
+
+/* Con la app abierta: avisa al llegar la hora de cada recordatorio (o enseguida, si ya pasó). */
 function notificarSiCorresponde(r) {
-  clearTimeout(temporizadorAviso);
+  temporizadoresAviso.forEach(clearTimeout);
+  temporizadoresAviso = [];
   if (!recordatorioActivo() || !r) return;
-  const enviar = () => {
-    const marca = `${estado.loc.id}|${r.zona || ''}|${r.fecha.toDateString()}`;
-    if (leer('ultimoAviso') === marca) return;
-    if ('Notification' in window && Notification.permission === 'granted') {
-      try { new Notification('EcoAlerta', { body: textoAviso(r) }); guardar('ultimoAviso', marca); } catch (e) { /* ignorar */ }
-    }
-  };
-  const falta = r.avisoDesde - new Date();
-  if (falta <= 0) enviar();
-  else if (falta < 2 ** 31 - 1) temporizadorAviso = setTimeout(enviar, falta);
+
+  for (const aviso of r.avisos) {
+    const enviar = () => {
+      const marca = `${estado.loc.id}|${r.zona || ''}|${aviso.getTime()}`;
+      const enviados = avisosEnviados();
+      if (enviados.includes(marca)) return;
+      if ('Notification' in window && Notification.permission === 'granted') {
+        try {
+          new Notification('EcoAlerta', { body: textoAviso(r) });
+          guardar('avisosEnviados', JSON.stringify([...enviados, marca].slice(-30)));
+        } catch (e) { /* ignorar */ }
+      }
+    };
+    const falta = aviso - new Date();
+    if (falta <= 0) enviar();
+    else if (falta < 2 ** 31 - 1) temporizadoresAviso.push(setTimeout(enviar, falta));
+  }
 }
 
 async function alternarRecordatorio() {
