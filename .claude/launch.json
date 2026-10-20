@@ -1,6 +1,7 @@
 {
   "version": "0.0.1",
   "configurations": [
-    { "name": "ecoalerta", "runtimeExecutable": "python", "runtimeArgs": ["-m", "http.server", "8000"], "port": 8000 }
+    { "name": "ecoalerta", "runtimeExecutable": "python", "runtimeArgs": ["-m", "http.server", "8000"], "port": 8000 },
+    { "name": "ecoalerta-rediseno", "runtimeExecutable": "python", "runtimeArgs": ["-m", "http.server", "8123"], "port": 8123 }
   ]
 }

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#2E7D32">
+  <meta name="theme-color" content="#1D4A3C">
   <meta name="description" content="Reciclaje inteligente para cada comunidad">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -26,14 +26,14 @@
     <section id="bienvenida" class="bienvenida" hidden>
       <div class="bienvenida-caja">
         <div class="logo-grande" id="logo-bienvenida"></div>
-        <h1>EcoAlerta</h1>
-        <p class="sub">Pequeñas acciones, grandes cambios</p>
+        <h1>Reciclá con los horarios de tu barrio</h1>
+        <p class="sub">Elegí dónde vivís y te mostramos cuándo pasa el camión y adónde llevar cada residuo.</p>
 
-        <label for="sel-localidad">¿Dónde vivís?</label>
+        <label for="sel-localidad">Localidad</label>
         <select id="sel-localidad"></select>
 
         <div id="grupo-zona" hidden>
-          <label for="sel-zona">Tu zona</label>
+          <label for="sel-zona">Zona</label>
           <select id="sel-zona"></select>
         </div>
 
@@ -46,11 +46,8 @@
     <!-- App principal -->
     <header id="cabecera" class="cabecera" hidden>
       <div class="marca">
-        <span id="logo-cabecera"></span>
-        <div>
-          <b>EcoAlerta</b>
-          <small>Pequeñas acciones, grandes cambios</small>
-        </div>
+        <span id="logo-cabecera" class="logo-marca"></span>
+        <b>EcoAlerta</b>
       </div>
       <button id="btn-cambiar" class="chip" aria-label="Cambiar localidad"></button>
     </header>

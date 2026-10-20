@@ -26,7 +26,15 @@ const SVG = {
   abajo: '<path d="M6 9l6 6 6-6"/>',
   descargar: '<path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/>',
   galpon: '<path d="M3 21V9l9-6 9 6v12"/><path d="M8 21v-7h8v7"/>',
+  libro: '<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/><path d="M9 8h6"/>',
 };
+
+const COLORES = ['verde', 'azul', 'amarillo', 'marron', 'gris'];
+const claseColor = (c) => (COLORES.includes(norm(c || '')) ? norm(c) : 'gris');
+const LETRAS_SEMANA = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
+const ORDEN_SEMANA = [1, 2, 3, 4, 5, 6, 0];
+const reducirMovimiento = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+const esperar = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const estado = { localidades: [], loc: null, zona: null, filtroMapa: null, busqueda: '', mapa: null, capa: null, marcadores: {} };
 const cache = {};
@@ -159,7 +167,7 @@ async function alternarRecordatorio() {
     try { await Notification.requestPermission(); } catch (e) { /* ignorar */ }
   }
   guardar('recordatorio', recordatorioActivo() ? '0' : '1');
-  irA(pestanaActual());
+  irA(pestanaActual(), false);
 }
 
 /* ---------- mapa y lista de lugares ---------- */
@@ -179,9 +187,12 @@ function enlaceMapa(p) {
 function enfocarPunto(p) {
   const m = estado.marcadores[p.id];
   if (m && estado.mapa) {
-    $('.mapa-caja').scrollIntoView({ behavior: 'smooth', block: 'center' });
-    estado.mapa.setView(m.getLatLng(), 16);
+    $('.mapa-caja').scrollIntoView({ behavior: reducirMovimiento() ? 'auto' : 'smooth', block: 'center' });
+    estado.mapa.flyTo(m.getLatLng(), 16, { duration: reducirMovimiento() ? 0 : 0.9 });
     m.openPopup();
+  } else if (tabActual !== 'mapa') {
+    estado.enfocar = p.id;
+    irA('mapa');
   } else {
     window.open(enlaceMapa(p), '_blank', 'noopener');
   }
@@ -189,17 +200,16 @@ function enfocarPunto(p) {
 
 function tarjetaLugar(p) {
   const t = TIPOS_PUNTO[p.tipo];
-  return el('button', { class: 'lugar', onclick: () => enfocarPunto(p) },
-    el('span', { class: 'miniatura', style: `background:${t.color}` }, ico(t.icono)),
-    el('span', { class: 'info' },
-      el('span', { class: 'etiqueta' }, t.nombre),
+  return el('button', { class: 'item', onclick: () => enfocarPunto(p) },
+    el('span', { class: 'tile', style: `--tono:${t.color}` }, ico(t.icono)),
+    el('span', { class: 'cuerpo' },
       el('b', {}, p.nombre),
-      el('small', {}, ico('pin'), p.direccion),
-      el('small', {}, ico('reloj'), p.horario || 'Horario a confirmar')),
+      el('small', {}, p.direccion),
+      el('small', {}, p.horario || 'Horario a confirmar')),
     el('span', { class: 'flecha' }, ico('der')));
 }
 
-/* Redibuja marcadores, leyenda y lista sin recrear el buscador (para no perder el foco). */
+/* Redibuja marcadores, filtros y lista sin recrear el buscador (para no perder el foco). */
 function refrescarPuntos(max) {
   const visibles = puntosVisibles();
 
@@ -217,20 +227,24 @@ function refrescarPuntos(max) {
         iconAnchor: [8, 34],
         popupAnchor: [7, -34],
       });
-      const popup = el('div', {}, el('b', {}, p.nombre), el('br'), p.direccion, el('br'), `🕒 ${p.horario || 'Horario a confirmar'}`, el('br'),
-        el('a', { class: 'enlace', href: enlaceMapa(p), target: '_blank', rel: 'noopener' }, 'Cómo llegar →'));
+      const popup = el('div', {}, el('b', {}, p.nombre), el('br'), p.direccion, el('br'), p.horario || 'Horario a confirmar', el('br'),
+        el('a', { class: 'enlace', href: enlaceMapa(p), target: '_blank', rel: 'noopener' }, 'Cómo llegar'));
       estado.marcadores[p.id] = L.marker([p.lat, p.lng], { icon }).bindPopup(popup).addTo(estado.capa);
       coords.push([p.lat, p.lng]);
     }
-    if (coords.length > 1) estado.mapa.fitBounds(coords, { paddingTopLeft: [30, 70], paddingBottomRight: [30, 70] });
+    if (coords.length > 1) estado.mapa.fitBounds(coords, { padding: [40, 40], animate: true, duration: 0.7 });
     else if (coords.length === 1) estado.mapa.setView(coords[0], 15);
   }
 
-  const tipos = [...new Set(estado.loc.puntos.map((p) => p.tipo))];
-  pintar($('#leyenda'), tipos.map((t) => el('button', {
-    class: estado.filtroMapa === t ? 'activo' : '',
-    onclick: () => { estado.filtroMapa = estado.filtroMapa === t ? null : t; refrescarPuntos(max); },
-  }, el('span', { class: 'bolita', style: `background:${TIPOS_PUNTO[t].color}` }, ico(TIPOS_PUNTO[t].icono)), TIPOS_PUNTO[t].nombre)));
+  const filtros = $('#leyenda');
+  if (filtros) {
+    const tipos = [...new Set(estado.loc.puntos.map((p) => p.tipo))];
+    pintar(filtros, tipos.map((t) => el('button', {
+      class: estado.filtroMapa === t ? 'activo' : '',
+      'aria-pressed': String(estado.filtroMapa === t),
+      onclick: () => { estado.filtroMapa = estado.filtroMapa === t ? null : t; refrescarPuntos(max); },
+    }, el('span', { class: 'punto', style: `background:${TIPOS_PUNTO[t].color}` }), TIPOS_PUNTO[t].nombre)));
+  }
 
   const lista = max ? visibles.slice(0, max) : visibles;
   pintar($('#lista-lugares'), lista.length
@@ -238,24 +252,29 @@ function refrescarPuntos(max) {
     : el('div', { class: 'vacio' }, 'No encontramos lugares con ese filtro.'));
 }
 
-/* Mapa con buscador y leyenda. Devuelve el elemento; hay que llamar a iniciarMapa() cuando ya está en pantalla. */
-function bloqueMapa(alto) {
-  const input = el('input', { type: 'search', placeholder: 'Buscar un punto limpio, centro de reciclaje…', 'aria-label': 'Buscar lugares', value: estado.busqueda });
-  return el('div', { class: `mapa-caja${alto ? ' alto' : ''}` },
-    el('div', { class: 'buscador' }, ico('lupa'), input),
-    el('div', { class: 'mapa-lienzo', id: 'mapa-lienzo' }),
-    el('div', { class: 'leyenda', id: 'leyenda' }));
+function campoBusqueda(placeholder, etiqueta, valor) {
+  return el('label', { class: 'campo' }, ico('lupa'),
+    el('input', { type: 'search', id: 'buscar-lugares', placeholder, 'aria-label': etiqueta, value: valor || '' }));
+}
+
+/* Mapa con filtros. Devuelve los elementos; hay que llamar a iniciarMapa() cuando ya están en pantalla. */
+function bloqueMapa() {
+  return [
+    campoBusqueda('Buscar un punto limpio o centro', 'Buscar lugares', estado.busqueda),
+    el('div', { class: 'filtros', id: 'leyenda', role: 'group', 'aria-label': 'Tipo de lugar' }),
+    el('div', { class: 'mapa-caja' }, el('div', { class: 'mapa-lienzo', id: 'mapa-lienzo' })),
+  ];
 }
 
 function iniciarMapa(max) {
   const lienzo = $('#mapa-lienzo');
-  $('.buscador input').addEventListener('input', (e) => { estado.busqueda = e.target.value; refrescarPuntos(max); });
+  $('#buscar-lugares').addEventListener('input', (e) => { estado.busqueda = e.target.value; refrescarPuntos(max); });
   if (window.L) {
     estado.mapa = L.map(lienzo).setView(estado.loc.centro, 14);
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(estado.mapa);
     estado.capa = L.layerGroup().addTo(estado.mapa);
   } else {
-    pintar(lienzo, el('p', { class: 'vacio', style: 'margin:60px 16px' }, 'No se pudo cargar el mapa (¿sin conexión?). Mirá la lista de lugares.'));
+    pintar(lienzo, el('p', { class: 'vacio', style: 'padding-top:120px' }, 'No se pudo cargar el mapa. Revisá tu conexión; la lista de lugares sigue disponible.'));
   }
   refrescarPuntos(max);
 }
@@ -268,53 +287,71 @@ function destruirMapa() {
 /* ---------- pantallas ---------- */
 
 function avisoDemo() {
-  return estado.loc.demo ? el('p', { class: 'aviso', style: 'margin:0 0 12px' }, '⚠️ Datos ficticios de demostración.') : null;
+  return estado.loc.demo ? el('p', { class: 'nota-demo' }, 'Datos ficticios de demostración') : null;
+}
+
+function interruptorRecordatorio() {
+  const activo = recordatorioActivo();
+  return el('button', { class: 'interruptor', role: 'switch', 'aria-checked': String(activo), 'aria-label': 'Recordatorio de recolección', onclick: alternarRecordatorio });
+}
+
+function tarjetaProxima(prox, loc, zona) {
+  if (!prox) {
+    return el('section', { class: 'hero sin-datos' },
+      el('p', { class: 'hero-previa' }, 'Recolección'),
+      el('h2', { class: 'hero-palabra' }, el('span', {}, 'Sin cargar todavía')),
+      el('p', { class: 'hero-hora' }, `Aún no tenemos los días y horarios de ${loc.nombre}. Mientras tanto, mirá adónde llevar tus residuos.`));
+  }
+
+  const n = diasHasta(prox.fecha);
+  const palabra = n === 0 ? 'Hoy' : n === 1 ? 'Mañana' : mayus(DIAS[prox.fecha.getDay()]);
+  const hora = prox.horario ? `${prox.horario} hs` : '';
+  const detalle = n > 1 ? [fmtFecha(prox.fecha), hora].filter(Boolean).join(', ') : hora;
+
+  const porDia = {};
+  for (const r of loc.recoleccion) {
+    if (r.zona && zona && r.zona !== zona) continue;
+    const d = DIAS.findIndex((x) => norm(x) === norm(r.dia));
+    if (d >= 0) (porDia[d] = porDia[d] || []).push(r);
+  }
+  const hoy = new Date().getDay();
+
+  return el('section', { class: 'hero' },
+    el('p', { class: 'hero-previa' }, 'Próxima recolección'),
+    el('h2', { class: 'hero-palabra' }, el('span', {}, palabra)),
+    el('p', { class: 'hero-tipo' }, el('span', { class: `punto ${claseColor(prox.color)}` }), prox.tipo),
+    detalle && el('p', { class: 'hero-hora' }, detalle),
+    n <= 1 && prox.aviso && el('p', { class: 'hero-aviso' }, prox.aviso),
+    el('ol', { class: 'semana', 'aria-label': 'Recolección de la semana' },
+      ORDEN_SEMANA.map((d, i) => el('li', {
+        class: `dia${d === hoy ? ' hoy' : ''}`,
+        'aria-label': `${mayus(DIAS[d])}: ${porDia[d] ? porDia[d].map((r) => r.tipo).join(', ') : 'sin recolección'}`,
+      },
+      el('span', {}, LETRAS_SEMANA[i]),
+      el('span', { class: 'marcas' }, (porDia[d] || []).map((r, k) => el('i', { class: `punto ${claseColor(r.color)}`, style: `--i:${i + k}` })))))),
+    el('div', { class: 'hero-pie' }, el('span', {}, 'Avisarme antes de que pase'), interruptorRecordatorio()));
 }
 
 function renderInicio() {
   const { loc, zona } = estado;
   const prox = proximasRecolecciones(loc, zona)[0];
-  const cerca = prox && diasHasta(prox.fecha) <= 1;
-
-  let aviso;
-  if (prox) {
-    aviso = el('div', { class: `aviso-card${cerca ? ' urgente' : ''}`, role: 'button', tabindex: '0', onclick: () => irA('calendario') },
-      el('span', { class: 'campana' }, ico('campana')),
-      el('span', { class: 'cuerpo' },
-        el('b', {}, `Próxima recolección de ${prox.tipo.toLowerCase()}`),
-        el('p', {}, `El camión pasa ${cuando(prox.fecha)}.`),
-        cerca && prox.aviso && el('p', {}, `¡${prox.aviso}!`),
-        el('button', { class: 'accion', onclick: (e) => { e.stopPropagation(); alternarRecordatorio(); } },
-          recordatorioActivo() ? '🔔 Recordatorio activado (tocá para desactivar)' : 'Activar recordatorio')),
-      el('span', { class: 'flecha' }, ico('der')));
-  } else {
-    aviso = el('div', { class: 'aviso-card', role: 'button', tabindex: '0', onclick: () => irA('calendario') },
-      el('span', { class: 'campana' }, ico('campana')),
-      el('span', { class: 'cuerpo' },
-        el('b', {}, 'Recolección pendiente de carga'),
-        el('p', {}, `Todavía no cargamos los días y horarios de ${loc.nombre}.`)),
-      el('span', { class: 'flecha' }, ico('der')));
-  }
-
-  const acceso = (tab, icono, texto, principal) =>
-    el('button', { class: `acceso${principal ? ' principal' : ''}`, onclick: () => irA(tab) }, ico(icono), texto);
+  const noticias = [...(loc.noticias || [])].sort((a, b) => b.fecha.localeCompare(a.fecha)).slice(0, 2);
 
   pintar($('#tab-inicio'),
     avisoDemo(),
-    aviso,
-    el('div', { class: 'accesos' },
-      acceso('mapa', 'mapa', 'Mapa', true),
-      acceso('calendario', 'calendario', 'Calendario'),
-      acceso('guia', 'reciclar', 'Guía de reciclaje'),
-      acceso('noticias', 'hoja', 'Noticias')),
-    el('div', { style: 'height:14px' }),
-    bloqueMapa(false),
-    el('div', { class: 'titulo-fila' },
-      el('h3', {}, 'Lugares cercanos'),
-      el('button', { class: 'ver-todos', onclick: () => irA('mapa') }, 'Ver todos →')),
-    el('div', { id: 'lista-lugares' }));
+    tarjetaProxima(prox, loc, zona),
+    el('div', { class: 'encabezado' },
+      el('h3', {}, 'Dónde llevar tus residuos'),
+      el('button', { class: 'ver-todos', onclick: () => irA('mapa') }, 'Ver mapa')),
+    el('div', { class: 'lista', id: 'lista-lugares' }),
+    noticias.length > 0 && el('div', { class: 'encabezado' },
+      el('h3', {}, 'Novedades'),
+      el('button', { class: 'ver-todos', onclick: () => irA('noticias') }, 'Ver todas')),
+    noticias.length > 0 && el('div', { class: 'lista' },
+      noticias.map((n) => el('div', { class: 'item' },
+        el('span', { class: 'cuerpo' }, el('b', {}, n.titulo), el('small', {}, fmtFecha(parseFecha(n.fecha))))))));
 
-  iniciarMapa(3);
+  refrescarPuntos(3);
   notificarSiCorresponde(prox);
 }
 
@@ -323,126 +360,169 @@ function renderMapa() {
   pintar($('#tab-mapa'),
     el('h2', {}, 'Mapa'),
     avisoDemo(),
-    bloqueMapa(true),
-    estado.loc.puntos.some((p) => p.aprox) && el('p', { class: 'muted' }, 'Las ubicaciones del mapa son aproximadas.'),
-    el('h3', {}, 'Lugares'),
-    el('div', { id: 'lista-lugares' }),
-    el('h3', {}, 'Qué materiales se reciben'),
-    el('div', { class: 'card' },
-      el('p', { style: 'margin:0;color:var(--texto)' }, loc.materiales.aceptados.join(' · ')),
-      loc.materiales.condicion && el('p', {}, loc.materiales.condicion)));
+    bloqueMapa(),
+    loc.puntos.some((p) => p.aprox) && el('p', { class: 'muted', style: 'margin-top:12px' }, 'Las ubicaciones del mapa son aproximadas.'),
+    el('div', { class: 'encabezado' }, el('h3', {}, 'Lugares')),
+    el('div', { class: 'lista', id: 'lista-lugares' }),
+    el('div', { class: 'encabezado' }, el('h3', {}, 'Qué materiales se reciben')),
+    el('div', { class: 'materiales' }, loc.materiales.aceptados.map((m) => el('span', { class: 'pastilla' }, m))),
+    loc.materiales.condicion && el('p', { class: 'muted nota-materiales' }, loc.materiales.condicion));
   iniciarMapa(0);
+
+  if (estado.enfocar) {
+    const p = loc.puntos.find((x) => x.id === estado.enfocar);
+    estado.enfocar = null;
+    if (p) setTimeout(() => enfocarPunto(p), 450);
+  }
 }
 
 function renderCalendario() {
   const { loc, zona } = estado;
   const semanal = loc.recoleccion.filter((r) => !r.zona || !zona || r.zona === zona);
   const bloqueSemanal = semanal.length
-    ? semanal.map((r) => el('div', { class: 'card' },
-        el('h4', {}, el('span', { class: `punto ${r.color || 'gris'}` }), `${mayus(r.dia)}, ${r.horario} hs`),
-        el('p', {}, r.tipo)))
-    : el('div', { class: 'vacio' }, 'Calendario de recolección pendiente de carga.');
+    ? el('div', { class: 'lista' }, semanal.map((r) => el('div', { class: 'item dia-semanal' },
+        el('span', { class: `punto ${claseColor(r.color)}` }),
+        el('span', { class: 'cuerpo' }, el('b', {}, mayus(r.dia)), el('small', {}, `${r.horario} hs, ${r.tipo.toLowerCase()}`)))))
+    : el('div', { class: 'vacio' }, 'El calendario de recolección todavía no está cargado.');
 
+  // Cada mes es su propia lista, para que las líneas divisorias no crucen los encabezados.
+  const meses = [];
   let mesActual = '';
-  const lista = proximasFechas(loc).map((it) => {
+  for (const it of proximasFechas(loc)) {
     const clave = `${MESES[it.inicio.getMonth()]} ${it.inicio.getFullYear()}`;
-    const encabezado = clave !== mesActual ? el('h3', {}, mayus(clave)) : null;
-    mesActual = clave;
-    return [encabezado, el('div', { class: 'card fila' },
-      el('div', { class: 'fecha-caja' }, el('b', {}, it.inicio.getDate()), el('small', {}, MESES[it.inicio.getMonth()].slice(0, 3))),
-      el('div', {},
-        el('span', { class: `etiqueta ${it.tipo === 'evento' ? 'evento' : ''}` }, it.tipo === 'evento' ? 'Evento' : 'Fecha ambiental'),
-        el('h4', {}, it.titulo),
+    if (clave !== mesActual) { meses.push({ titulo: mayus(clave), filas: [] }); mesActual = clave; }
+    meses[meses.length - 1].filas.push(el('div', { class: 'item' },
+      el('div', { class: 'fecha-col' }, el('b', {}, it.inicio.getDate()), el('small', {}, MESES[it.inicio.getMonth()].slice(0, 3))),
+      el('div', { class: 'cuerpo' },
+        el('b', {}, it.titulo),
         it.fin > it.inicio && el('p', {}, rangoFecha(it)),
-        it.descripcion && el('p', { style: 'white-space: pre-line' }, it.descripcion)))];
-  });
+        it.descripcion && el('p', { style: 'white-space: pre-line' }, it.descripcion),
+        it.tipo === 'evento' && el('span', { class: 'pastilla' }, 'Evento local'))));
+  }
 
   pintar($('#tab-calendario'),
     el('h2', {}, 'Calendario'),
     avisoDemo(),
-    el('h3', {}, 'Recolección semanal' + (zona ? ` · ${zona}` : '')),
+    el('div', { class: 'encabezado' }, el('h3', {}, zona ? `Recolección semanal en ${zona}` : 'Recolección semanal')),
     bloqueSemanal,
-    el('h3', {}, 'Fechas y eventos ambientales'),
-    lista);
+    el('div', { class: 'encabezado' }, el('h3', {}, 'Fechas y eventos ambientales')),
+    meses.length
+      ? meses.map((m) => [el('h3', { class: 'mes' }, m.titulo), el('div', { class: 'lista' }, m.filas)])
+      : el('div', { class: 'vacio' }, 'No hay fechas próximas.'));
 }
 
 function renderGuia(filtro = '') {
   const { loc } = estado;
   const q = norm(filtro.trim());
   const items = loc.guia.filter((g) => !q || norm(`${g.residuo} ${g.va_en} ${g.como_prepararlo}`).includes(q));
-  const tarjetas = items.length
-    ? items.map((g) => el('div', { class: 'card' },
-        el('h4', {}, g.residuo),
-        el('span', { class: 'etiqueta' }, `Va en: ${g.va_en}`),
-        el('p', {}, g.como_prepararlo)))
+  const filas = items.length
+    ? items.map((g) => el('div', { class: 'item' },
+        el('div', { class: 'cuerpo' },
+          el('b', {}, g.residuo),
+          el('p', {}, g.como_prepararlo),
+          el('span', { class: 'pastilla' }, `Va en ${g.va_en.charAt(0).toLowerCase()}${g.va_en.slice(1)}`))))
     : el('div', { class: 'vacio' }, 'No encontramos ese residuo en la guía.');
 
-  if ($('#lista-guia')) { pintar($('#lista-guia'), tarjetas); return; }
+  if ($('#lista-guia')) { pintar($('#lista-guia'), filas); return; }
 
-  const input = el('input', { type: 'search', placeholder: '¿Dónde tiro…? (ej: vidrio)', 'aria-label': 'Buscar residuo' });
+  const input = el('input', { type: 'search', placeholder: '¿Dónde tiro…? Por ejemplo, vidrio', 'aria-label': 'Buscar residuo' });
   input.addEventListener('input', () => renderGuia(input.value));
   pintar($('#tab-guia'),
     el('h2', {}, 'Guía de separación'),
     avisoDemo(),
-    loc.guia_nota && el('p', { class: 'muted' }, loc.guia_nota),
-    el('div', { class: 'campo-guia' }, ico('lupa'), input),
-    el('div', { id: 'lista-guia' }, tarjetas));
+    loc.guia_nota && el('p', { class: 'muted', style: 'margin-bottom:18px' }, loc.guia_nota),
+    el('label', { class: 'campo' }, ico('lupa'), input),
+    el('div', { class: 'lista', id: 'lista-guia' }, filas));
 }
 
 function renderNoticias() {
   const noticias = [...(estado.loc.noticias || [])].sort((a, b) => b.fecha.localeCompare(a.fecha));
   pintar($('#tab-noticias'),
-    el('button', { class: 'volver', onclick: () => irA('inicio') }, '← Inicio'),
+    el('button', { class: 'volver', onclick: () => irA('inicio') }, ico('der'), 'Inicio'),
     el('h2', {}, 'Noticias e iniciativas'),
     avisoDemo(),
     noticias.length
-      ? noticias.map((n) => el('div', { class: 'card' },
-          el('span', { class: 'etiqueta' }, fmtFecha(parseFecha(n.fecha))),
-          el('h4', {}, n.titulo),
-          el('p', {}, n.resumen)))
+      ? el('div', { class: 'lista' }, noticias.map((n) => el('div', { class: 'item' },
+          el('div', { class: 'cuerpo' },
+            el('b', {}, n.titulo),
+            el('p', {}, n.resumen),
+            el('small', { style: 'margin-top:8px' }, fmtFecha(parseFecha(n.fecha)))))))
       : el('div', { class: 'vacio' }, `Todavía no hay noticias cargadas para ${estado.loc.nombre}.`));
 }
 
 function renderAjustes() {
   const { loc, zona } = estado;
+  const negrita = 'display:inline;font-weight:600;color:var(--tinta)';
   pintar($('#tab-ajustes'),
     el('h2', {}, 'Ajustes'),
     avisoDemo(),
-    el('div', { class: 'card fila-ajuste' },
-      el('div', {}, el('h4', {}, 'Tu localidad'), el('p', {}, `${loc.nombre}${zona ? ' · ' + zona : ''}`)),
-      el('button', { class: 'btn btn-peq', onclick: () => mostrarBienvenida(true) }, 'Cambiar')),
-    el('div', { class: 'card fila-ajuste' },
-      el('div', {}, el('h4', {}, 'Recordatorios'), el('p', {}, recordatorioActivo() ? 'Activados: te avisamos antes de la recolección.' : 'Desactivados.')),
-      el('button', { class: 'btn btn-peq', onclick: alternarRecordatorio }, recordatorioActivo() ? 'Desactivar' : 'Activar')),
-    el('div', { class: 'card' },
-      el('h4', {}, 'Instalar la app'),
-      estaInstalada()
-        ? el('p', {}, '✅ Ya la tenés instalada en este dispositivo.')
-        : [
-            el('p', {}, el('b', {}, 'Android (Chrome): '), 'tocá el menú ⋮ y elegí «Instalar app» o «Agregar a la pantalla principal».'),
-            el('p', {}, el('b', {}, 'iPhone (Safari): '), 'tocá el botón Compartir y elegí «Agregar a inicio».'),
-            eventoInstalacion && el('button', { class: 'btn btn-peq btn-icono', style: 'margin-top:10px', onclick: instalarApp }, ico('descargar'), 'Instalar ahora'),
-          ]),
-    el('div', { class: 'card' },
-      el('h4', {}, 'Acerca de EcoAlerta'),
-      el('p', {}, 'Prototipo escolar. Los datos de cada localidad se cargaron manualmente y las ubicaciones del mapa son aproximadas. Los recordatorios funcionan con la app abierta.')));
+    el('div', { class: 'grupo' },
+      el('div', { class: 'item' },
+        el('div', { class: 'cuerpo' }, el('b', {}, 'Tu localidad'), el('p', {}, `${loc.nombre}${zona ? ', ' + zona : ''}`)),
+        el('button', { class: 'btn btn-peq', onclick: () => mostrarBienvenida(true) }, 'Cambiar')),
+      el('div', { class: 'item' },
+        el('div', { class: 'cuerpo' }, el('b', {}, 'Recordatorios'), el('p', {}, recordatorioActivo() ? 'Te avisamos antes de la recolección.' : 'Desactivados.')),
+        interruptorRecordatorio())),
+    el('div', { class: 'grupo' },
+      el('div', { class: 'item' },
+        el('div', { class: 'cuerpo' },
+          el('b', {}, 'Instalar la app'),
+          estaInstalada()
+            ? el('p', {}, 'Ya está instalada en este dispositivo.')
+            : [
+                el('p', {}, el('b', { style: negrita }, 'Android (Chrome): '), 'abrí el menú ⋮ y elegí «Instalar app».'),
+                el('p', {}, el('b', { style: negrita }, 'iPhone (Safari): '), 'tocá Compartir y elegí «Agregar a inicio».'),
+                eventoInstalacion && el('button', { class: 'btn btn-peq btn-icono', style: 'margin-top:14px', onclick: instalarApp }, ico('descargar'), 'Instalar ahora'),
+              ]))),
+    el('div', { class: 'grupo' },
+      el('div', { class: 'item' },
+        el('div', { class: 'cuerpo' },
+          el('b', {}, 'Acerca de EcoAlerta'),
+          el('p', {}, 'Prototipo escolar. Los datos de cada localidad se cargaron a mano y las ubicaciones del mapa son aproximadas. Los recordatorios funcionan con la app abierta.')))));
 }
 
 /* ---------- navegación ---------- */
 
 const RENDER = { inicio: renderInicio, calendario: renderCalendario, mapa: renderMapa, guia: () => renderGuia(), noticias: renderNoticias, ajustes: renderAjustes };
-const NAV = [['inicio', 'casa', 'Inicio'], ['calendario', 'calendario', 'Calendario'], ['mapa', 'pin', 'Mapa'], ['guia', 'reciclar', 'Guía'], ['ajustes', 'ajustes', 'Ajustes']];
+const NAV = [['inicio', 'casa', 'Inicio'], ['calendario', 'calendario', 'Calendario'], ['mapa', 'pin', 'Mapa'], ['guia', 'libro', 'Guía'], ['ajustes', 'ajustes', 'Ajustes']];
 let tabActual = 'inicio';
+let pasoNavegacion = 0;
 const pestanaActual = () => tabActual;
 
-function irA(tab) {
-  if (tab !== tabActual) { estado.busqueda = ''; estado.filtroMapa = null; }
+/* Entrada escalonada: cada bloque y cada fila de lista aparece un instante después del anterior. */
+function escalonar(seccion) {
+  const nodos = [...seccion.querySelectorAll(':scope > *, .lista > *')].filter((n) => !n.classList.contains('lista'));
+  nodos.forEach((n, i) => { n.style.setProperty('--i', Math.min(i, 9)); n.classList.add('ent'); });
+}
+
+async function irA(tab, animar = true) {
+  const paso = ++pasoNavegacion;
+  const previa = document.querySelector('.tab:not([hidden])');
+  const cambia = tab !== tabActual;
+
+  if (cambia && animar && !reducirMovimiento() && previa && !$('#principal').hidden) {
+    previa.classList.add('sale');
+    await esperar(150);
+    if (paso !== pasoNavegacion) return;
+    previa.classList.remove('sale');
+  }
+
+  if (cambia) { estado.busqueda = ''; estado.filtroMapa = null; }
   tabActual = tab;
   destruirMapa();
+  const seccion = $(`#tab-${tab}`);
   document.querySelectorAll('.tab').forEach((s) => { s.hidden = s.id !== `tab-${tab}`; });
-  document.querySelectorAll('#nav button').forEach((b) => b.classList.toggle('activa', b.dataset.tab === tab));
+  const activa = tab === 'noticias' ? 'inicio' : tab;
+  document.querySelectorAll('#nav button').forEach((b) => {
+    const on = b.dataset.tab === activa;
+    b.classList.toggle('activa', on);
+    if (on) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
+  });
+  $('#nav').style.setProperty('--pos', String(Math.max(0, NAV.findIndex(([t]) => t === activa))));
+
+  seccion.classList.toggle('quieto', !animar);
   RENDER[tab]();
-  window.scrollTo(0, 0);
+  if (animar) { escalonar(seccion); window.scrollTo(0, 0); }
 }
 
 function mostrarApp() {
@@ -497,8 +577,9 @@ async function iniciar() {
 
   pintar($('#logo-bienvenida'), ico('hoja'));
   pintar($('#logo-cabecera'), ico('hoja'));
-  pintar($('#nav'), NAV.map(([tab, icono, texto]) =>
+  pintar($('#nav'), el('span', { class: 'nav-ind', 'aria-hidden': 'true' }), NAV.map(([tab, icono, texto]) =>
     el('button', { 'data-tab': tab, onclick: () => irA(tab) }, ico(icono), texto)));
+  window.addEventListener('scroll', () => $('#cabecera').classList.toggle('con-borde', window.scrollY > 4), { passive: true });
   pintar($('#sel-localidad'), estado.localidades.map((l) => el('option', { value: l.id }, l.nombre)));
   $('#sel-localidad').addEventListener('change', actualizarZonas);
   $('#btn-empezar').addEventListener('click', elegirLocalidad);
@@ -532,7 +613,9 @@ const esIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.
 
 function ocultarToast() {
   const t = $('#toast-instalar');
-  if (t) t.remove();
+  if (!t) return;
+  t.classList.add('saliendo');
+  setTimeout(() => t.remove(), reducirMovimiento() ? 0 : 350);
 }
 
 async function instalarApp() {
