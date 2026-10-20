@@ -5,10 +5,12 @@
   "centro": [-37.32, -59.13],
   "zonas": ["Centro", "Barrio Norte"],
   "recoleccion": [
-    { "zona": "Centro", "dia": "martes", "horario": "07:00", "tipo": "Reciclables", "color": "verde", "aviso": "Sacá tu bolsa verde" },
-    { "zona": "Centro", "dia": "viernes", "horario": "07:00", "tipo": "Residuos húmedos", "color": "gris", "aviso": "Sacá tu bolsa gris" },
-    { "zona": "Barrio Norte", "dia": "miércoles", "horario": "08:00", "tipo": "Reciclables", "color": "verde", "aviso": "Sacá tu bolsa verde" },
-    { "zona": "Barrio Norte", "dia": "sábado", "horario": "08:00", "tipo": "Residuos húmedos", "color": "gris", "aviso": "Sacá tu bolsa gris" }
+    { "zona": "Centro", "dia": "miércoles", "horario": "07:00", "horario_fin": "12:00", "tipo": "Reciclables", "color": "verde", "aviso": "Sacá tu bolsa verde", "recordatorio": { "dias_antes": 1, "hora": "20:00" } },
+    { "zona": "Centro", "dia": "jueves", "horario": "07:00", "horario_fin": "12:00", "tipo": "Residuos húmedos", "color": "gris", "aviso": "Sacá tu bolsa gris", "recordatorio": { "dias_antes": 1, "hora": "20:00" } },
+    { "zona": "Centro", "dia": "viernes", "horario": "07:00", "horario_fin": "12:00", "tipo": "Reciclables", "color": "verde", "aviso": "Sacá tu bolsa verde", "recordatorio": { "dias_antes": 1, "hora": "20:00" } },
+    { "zona": "Barrio Norte", "dia": "miércoles", "horario": "07:00", "horario_fin": "12:00", "tipo": "Reciclables", "color": "verde", "aviso": "Sacá tu bolsa verde", "recordatorio": { "dias_antes": 1, "hora": "20:00" } },
+    { "zona": "Barrio Norte", "dia": "jueves", "horario": "07:00", "horario_fin": "12:00", "tipo": "Residuos húmedos", "color": "gris", "aviso": "Sacá tu bolsa gris", "recordatorio": { "dias_antes": 1, "hora": "20:00" } },
+    { "zona": "Barrio Norte", "dia": "viernes", "horario": "07:00", "horario_fin": "12:00", "tipo": "Reciclables", "color": "verde", "aviso": "Sacá tu bolsa verde", "recordatorio": { "dias_antes": 1, "hora": "20:00" } }
   ],
   "materiales": {
     "aceptados": ["Cartón y papel", "Plástico PET", "Vidrio", "Pilas", "Aparatos electrónicos"],
