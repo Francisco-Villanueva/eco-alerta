@@ -4,7 +4,7 @@
    - Mosaicos del mapa: siempre de la red (sin conexión el mapa queda gris, pero la lista de lugares sigue funcionando).
    Al cambiar archivos de la app, subir el número de VERSION para renovar la copia guardada. */
 
-const VERSION = 'ecoalerta-v7';
+const VERSION = 'ecoalerta-v8';
 
 const ARCHIVOS = [
   './',

@@ -104,9 +104,17 @@ function proximasRecolecciones(loc, zona) {
     const dia = DIAS.findIndex((d) => norm(d) === norm(r.dia));
     if (dia < 0) continue;
     const [hh, mm] = (r.horario || '00:00').split(':').map(Number);
+    const [fh, fm] = (r.horario_fin || r.horario || '00:00').split(':').map(Number);
+    const [ah, am] = ((r.recordatorio && r.recordatorio.hora) || '20:00').split(':').map(Number);
+    const diasAntes = r.recordatorio && r.recordatorio.dias_antes != null ? r.recordatorio.dias_antes : 1;
     for (let n = 0; n < 8; n++) {
       const f = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() + n, hh, mm);
-      if (f.getDay() === dia && f >= ahora) { res.push({ ...r, fecha: f }); break; }
+      const fin = new Date(f.getFullYear(), f.getMonth(), f.getDate(), fh, fm);
+      if (f.getDay() === dia && fin >= ahora) {
+        const avisoDesde = new Date(f.getFullYear(), f.getMonth(), f.getDate() - diasAntes, ah, am);
+        res.push({ ...r, fecha: f, fin, avisoDesde });
+        break;
+      }
     }
   }
   return res.sort((a, b) => a.fecha - b.fecha);
@@ -153,13 +161,36 @@ function textoAviso(r) {
   return `${mayus(cuando(r.fecha))} pasa el camión de ${r.tipo.toLowerCase()}.${r.aviso ? ` ¡${r.aviso}!` : ''}`;
 }
 
+/* Horario de la recolección: "de 6:00 a 12:00 hs" (o "6:00 hs" si no hay hora de fin). */
+function horarioTxt(r) {
+  const h = (s) => s.replace(/^0/, '');
+  return r.horario_fin ? `de ${h(r.horario)} a ${h(r.horario_fin)} hs` : `${h(r.horario)} hs`;
+}
+
+/* Cuándo se avisa, por ejemplo "el miércoles a las 21:00". */
+function cuandoAvisamos(r) {
+  const d = r.avisoDesde;
+  return `el ${DIAS[d.getDay()]} a las ${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+
+const enVentanaAviso = (r) => new Date() >= r.avisoDesde;
+
+let temporizadorAviso = null;
+
+/* Con la app abierta: avisa al llegar la hora del recordatorio (o enseguida, si ya pasó). */
 function notificarSiCorresponde(r) {
-  if (!recordatorioActivo() || !r || diasHasta(r.fecha) > 1) return;
-  const marca = `${estado.loc.id}|${r.zona || ''}|${r.fecha.toDateString()}`;
-  if (leer('ultimoAviso') === marca) return;
-  if ('Notification' in window && Notification.permission === 'granted') {
-    try { new Notification('EcoAlerta', { body: textoAviso(r) }); guardar('ultimoAviso', marca); } catch (e) { /* ignorar */ }
-  }
+  clearTimeout(temporizadorAviso);
+  if (!recordatorioActivo() || !r) return;
+  const enviar = () => {
+    const marca = `${estado.loc.id}|${r.zona || ''}|${r.fecha.toDateString()}`;
+    if (leer('ultimoAviso') === marca) return;
+    if ('Notification' in window && Notification.permission === 'granted') {
+      try { new Notification('EcoAlerta', { body: textoAviso(r) }); guardar('ultimoAviso', marca); } catch (e) { /* ignorar */ }
+    }
+  };
+  const falta = r.avisoDesde - new Date();
+  if (falta <= 0) enviar();
+  else if (falta < 2 ** 31 - 1) temporizadorAviso = setTimeout(enviar, falta);
 }
 
 async function alternarRecordatorio() {
@@ -305,7 +336,7 @@ function tarjetaProxima(prox, loc, zona) {
 
   const n = diasHasta(prox.fecha);
   const palabra = n === 0 ? 'Hoy' : n === 1 ? 'Mañana' : mayus(DIAS[prox.fecha.getDay()]);
-  const hora = prox.horario ? `${prox.horario} hs` : '';
+  const hora = prox.horario ? horarioTxt(prox) : '';
   const detalle = n > 1 ? [fmtFecha(prox.fecha), hora].filter(Boolean).join(', ') : hora;
 
   const porDia = {};
@@ -321,7 +352,7 @@ function tarjetaProxima(prox, loc, zona) {
     el('h2', { class: 'hero-palabra' }, el('span', {}, palabra)),
     el('p', { class: 'hero-tipo' }, el('span', { class: `punto ${claseColor(prox.color)}` }), prox.tipo),
     detalle && el('p', { class: 'hero-hora' }, detalle),
-    n <= 1 && prox.aviso && el('p', { class: 'hero-aviso' }, prox.aviso),
+    enVentanaAviso(prox) && prox.aviso && el('p', { class: 'hero-aviso' }, prox.aviso),
     el('ol', { class: 'semana', 'aria-label': 'Recolección de la semana' },
       ORDEN_SEMANA.map((d, i) => el('li', {
         class: `dia${d === hoy ? ' hoy' : ''}`,
@@ -329,7 +360,7 @@ function tarjetaProxima(prox, loc, zona) {
       },
       el('span', {}, LETRAS_SEMANA[i]),
       el('span', { class: 'marcas' }, (porDia[d] || []).map((r, k) => el('i', { class: `punto ${claseColor(r.color)}`, style: `--i:${i + k}` })))))),
-    el('div', { class: 'hero-pie' }, el('span', {}, 'Avisarme antes de que pase'), interruptorRecordatorio()));
+    el('div', { class: 'hero-pie' }, el('span', {}, `Avisarme ${cuandoAvisamos(prox)}`), interruptorRecordatorio()));
 }
 
 function renderInicio() {
@@ -382,7 +413,7 @@ function renderCalendario() {
   const bloqueSemanal = semanal.length
     ? el('div', { class: 'lista' }, semanal.map((r) => el('div', { class: 'item dia-semanal' },
         el('span', { class: `punto ${claseColor(r.color)}` }),
-        el('span', { class: 'cuerpo' }, el('b', {}, mayus(r.dia)), el('small', {}, `${r.horario} hs, ${r.tipo.toLowerCase()}`)))))
+        el('span', { class: 'cuerpo' }, el('b', {}, mayus(r.dia)), el('small', {}, `${horarioTxt(r)}, ${r.tipo.toLowerCase()}`)))))
     : el('div', { class: 'vacio' }, 'El calendario de recolección todavía no está cargado.');
 
   // Cada mes es su propia lista, para que las líneas divisorias no crucen los encabezados.

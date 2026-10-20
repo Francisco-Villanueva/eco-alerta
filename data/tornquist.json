@@ -4,18 +4,28 @@
   "demo": false,
   "centro": [-38.1, -62.22],
   "zonas": [],
-  "recoleccion": [],
+  "recoleccion": [
+    {
+      "dia": "jueves",
+      "horario": "06:00",
+      "horario_fin": "12:00",
+      "tipo": "Reciclables",
+      "color": "verde",
+      "aviso": "Sacá tu bolsa verde",
+      "recordatorio": { "dias_antes": 1, "hora": "21:00" }
+    }
+  ],
   "materiales": {
     "aceptados": ["Cartón y papel", "Plástico", "Vidrio", "Latas y metales", "Telgopor y aerosoles"],
-    "condicion": "Los puntos limpios reciben exclusivamente elementos limpios, secos y separados."
+    "condicion": "Se reciben exclusivamente elementos limpios, secos y separados."
   },
-  "guia_nota": "Los materiales aceptados son los que reciben los puntos limpios de Tornquist. Los consejos de preparación son recomendaciones generales: confirmalos con el municipio.",
+  "guia_nota": "Todos los materiales tienen que estar limpios y secos. Se sacan en la bolsa verde el día de la recolección o se llevan a un punto limpio. Los consejos de preparación son recomendaciones generales: confirmalos con el municipio.",
   "guia": [
-    { "id": "carton-papel", "residuo": "Cartón y papel", "va_en": "Punto limpio", "como_prepararlo": "Que estén limpios y secos. Aplastá las cajas para que ocupen menos lugar." },
-    { "id": "plastico", "residuo": "Plástico", "va_en": "Punto limpio", "como_prepararlo": "Vaciá y enjuagá botellas y envases. Dejalos secos y, si podés, aplastalos." },
-    { "id": "vidrio", "residuo": "Vidrio", "va_en": "Punto limpio", "como_prepararlo": "Vaciá y enjuagá frascos y botellas. Llevalos separados del resto." },
-    { "id": "latas-metales", "residuo": "Latas y metales", "va_en": "Punto limpio", "como_prepararlo": "Enjuagá las latas y dejalas secas." },
-    { "id": "telgopor-aerosoles", "residuo": "Telgopor y aerosoles", "va_en": "Punto limpio", "como_prepararlo": "El telgopor tiene que estar limpio y seco. Los aerosoles, vacíos." }
+    { "id": "carton-papel", "residuo": "Cartón y papel", "va_en": "Bolsa verde o punto limpio", "como_prepararlo": "Que estén limpios y secos. Aplastá las cajas para que ocupen menos lugar." },
+    { "id": "plastico", "residuo": "Plástico", "va_en": "Bolsa verde o punto limpio", "como_prepararlo": "Vaciá y enjuagá botellas y envases. Dejalos secos y, si podés, aplastalos." },
+    { "id": "vidrio", "residuo": "Vidrio", "va_en": "Bolsa verde o punto limpio", "como_prepararlo": "Vaciá y enjuagá frascos y botellas. Llevalos separados del resto." },
+    { "id": "latas-metales", "residuo": "Latas y metales", "va_en": "Bolsa verde o punto limpio", "como_prepararlo": "Enjuagá las latas y dejalas secas." },
+    { "id": "telgopor-aerosoles", "residuo": "Telgopor y aerosoles", "va_en": "Bolsa verde o punto limpio", "como_prepararlo": "El telgopor tiene que estar limpio y seco. Los aerosoles, vacíos." }
   ],
   "puntos": [
     {
