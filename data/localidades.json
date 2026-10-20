@@ -1,0 +1,4 @@
+[
+  { "id": "tornquist", "nombre": "Tornquist", "archivo": "tornquist.json", "demo": false },
+  { "id": "demo", "nombre": "Ciudad Ejemplo (demo)", "archivo": "demo.json", "demo": true }
+]

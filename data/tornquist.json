@@ -1,0 +1,77 @@
+{
+  "id": "tornquist",
+  "nombre": "Tornquist",
+  "demo": false,
+  "centro": [-38.1, -62.22],
+  "zonas": [],
+  "recoleccion": [],
+  "materiales": {
+    "aceptados": ["Cartón y papel", "Plástico", "Vidrio", "Latas y metales", "Telgopor y aerosoles"],
+    "condicion": "Los puntos limpios reciben exclusivamente elementos limpios, secos y separados."
+  },
+  "guia_nota": "Los materiales aceptados son los que reciben los puntos limpios de Tornquist. Los consejos de preparación son recomendaciones generales: confirmalos con el municipio.",
+  "guia": [
+    { "id": "carton-papel", "residuo": "Cartón y papel", "va_en": "Punto limpio", "como_prepararlo": "Que estén limpios y secos. Aplastá las cajas para que ocupen menos lugar." },
+    { "id": "plastico", "residuo": "Plástico", "va_en": "Punto limpio", "como_prepararlo": "Vaciá y enjuagá botellas y envases. Dejalos secos y, si podés, aplastalos." },
+    { "id": "vidrio", "residuo": "Vidrio", "va_en": "Punto limpio", "como_prepararlo": "Vaciá y enjuagá frascos y botellas. Llevalos separados del resto." },
+    { "id": "latas-metales", "residuo": "Latas y metales", "va_en": "Punto limpio", "como_prepararlo": "Enjuagá las latas y dejalas secas." },
+    { "id": "telgopor-aerosoles", "residuo": "Telgopor y aerosoles", "va_en": "Punto limpio", "como_prepararlo": "El telgopor tiene que estar limpio y seco. Los aerosoles, vacíos." }
+  ],
+  "puntos": [
+    {
+      "id": "galpon-reciclado",
+      "nombre": "Galpón de Reciclado de Tornquist",
+      "tipo": "centro_reciclaje",
+      "direccion": "Calle Lamela (entre Av. Sarmiento y V. Vergara)",
+      "horario": "Lunes a viernes de 8:00 a 12:00",
+      "descripcion": "Espacio municipal y del Taller Protegido donde se realiza la recepción, separación y enfardado de los materiales reciclables.",
+      "lat": -38.0935,
+      "lng": -62.2215,
+      "aprox": true
+    },
+    {
+      "id": "pl-independencia-amarante",
+      "nombre": "Punto Limpio Av. Independencia y Amarante",
+      "tipo": "punto_limpio",
+      "direccion": "Av. Independencia y Amarante",
+      "horario": null,
+      "descripcion": "Ubicación principal habilitada para la recepción de residuos clasificados.",
+      "lat": -38.1069,
+      "lng": -62.2188,
+      "aprox": true
+    },
+    {
+      "id": "pl-uriburu-fidani",
+      "nombre": "Punto Limpio Uriburu y Rómulo Fidani",
+      "tipo": "punto_limpio",
+      "direccion": "Uriburu y Rómulo Fidani",
+      "horario": null,
+      "descripcion": "Espacio de cercanía para el depósito de materiales reciclables.",
+      "lat": -38.105,
+      "lng": -62.2195,
+      "aprox": true
+    },
+    {
+      "id": "pl-rp76",
+      "nombre": "Punto Limpio RP N°76",
+      "tipo": "punto_limpio",
+      "direccion": "RP N°76, ingreso a la localidad",
+      "horario": null,
+      "descripcion": "Ubicado en el ingreso a la localidad.",
+      "lat": -38.0803,
+      "lng": -62.22,
+      "aprox": true
+    }
+  ],
+  "fechas_clave": [
+    { "id": "educ-ambiental", "fecha": "01-26", "titulo": "Día Internacional de la Educación Ambiental", "descripcion": "Conmemorado por el Parque Provincial Ernesto Tornquist - Cerro Ventana con actividades de educación y cuidado de la naturaleza." },
+    { "id": "aniv-parque", "fecha": "05-11", "titulo": "Aniversario del Parque Provincial Ernesto Tornquist", "descripcion": "Creado en 1937 como la primera área protegida de la Provincia de Buenos Aires." },
+    { "id": "mes-ambiente", "fecha": "06-01", "fecha_fin": "06-30", "titulo": "Mes del Medio Ambiente", "descripcion": "La Subsecretaría de Ambiente del Municipio de Tornquist organiza un cronograma especial de actividades." },
+    { "id": "dia-ambiente", "fecha": "06-05", "titulo": "Día Mundial del Medio Ambiente", "descripcion": "Jornadas de concientización, eco-canjes y talleres (por ejemplo, en Saldungaray y Sierra de la Ventana)." },
+    { "id": "dia-arbol", "fecha": "08-29", "titulo": "Día del Árbol", "descripcion": "Jornadas de forestación y plantación comunitaria (como en la Planta 3R de Sierra de la Ventana y en Tres Picos junto a escuelas locales)." },
+    { "id": "conciencia-ambiental", "fecha": "09-27", "titulo": "Día Nacional de la Conciencia Ambiental", "descripcion": "Instituido por la Ley 24.605 en memoria de las víctimas de un escape químico en Avellaneda, con actividades de reflexión ecológica en el distrito." },
+    { "id": "proteccion-naturaleza", "fecha": "10-18", "titulo": "Día Mundial de la Protección de la Naturaleza", "descripcion": "Recordatorio sobre la preservación de los ecosistemas locales y globales." }
+  ],
+  "eventos": [],
+  "noticias": []
+}

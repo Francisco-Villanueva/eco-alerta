@@ -1,0 +1,42 @@
+{
+  "id": "demo",
+  "nombre": "Ciudad Ejemplo (demo)",
+  "demo": true,
+  "centro": [-37.32, -59.13],
+  "zonas": ["Centro", "Barrio Norte"],
+  "recoleccion": [
+    { "zona": "Centro", "dia": "martes", "horario": "07:00", "tipo": "Reciclables", "color": "verde", "aviso": "Sacá tu bolsa verde" },
+    { "zona": "Centro", "dia": "viernes", "horario": "07:00", "tipo": "Residuos húmedos", "color": "gris", "aviso": "Sacá tu bolsa gris" },
+    { "zona": "Barrio Norte", "dia": "miércoles", "horario": "08:00", "tipo": "Reciclables", "color": "verde", "aviso": "Sacá tu bolsa verde" },
+    { "zona": "Barrio Norte", "dia": "sábado", "horario": "08:00", "tipo": "Residuos húmedos", "color": "gris", "aviso": "Sacá tu bolsa gris" }
+  ],
+  "materiales": {
+    "aceptados": ["Cartón y papel", "Plástico PET", "Vidrio", "Pilas", "Aparatos electrónicos"],
+    "condicion": "Limpios y secos. Datos ficticios de demostración."
+  },
+  "guia_nota": "Datos ficticios de demostración para mostrar cómo la app se adapta a cada localidad.",
+  "guia": [
+    { "id": "carton", "residuo": "Cartón y papel", "va_en": "Bolsa verde", "como_prepararlo": "Sin restos de comida. Plegá las cajas." },
+    { "id": "pet", "residuo": "Botella de plástico PET", "va_en": "Bolsa verde", "como_prepararlo": "Vaciala, enjuagala y aplastala." },
+    { "id": "vidrio", "residuo": "Vidrio", "va_en": "Contenedor de vidrio", "como_prepararlo": "Frascos y botellas sin tapa." },
+    { "id": "pilas", "residuo": "Pilas", "va_en": "Punto limpio", "como_prepararlo": "No las tires a la basura común. Juntalas en un frasco." },
+    { "id": "electronicos", "residuo": "Aparatos electrónicos", "va_en": "Punto limpio", "como_prepararlo": "Llevalos completos, sin desarmar." }
+  ],
+  "puntos": [
+    { "id": "pl-plaza", "nombre": "Punto Limpio Plaza (demo)", "tipo": "punto_limpio", "direccion": "Calle Ficticia 123", "horario": "Lunes a sábado de 9:00 a 17:00", "descripcion": "Recibe pilas, electrónicos, cartón, plástico y vidrio.", "lat": -37.321, "lng": -59.135 },
+    { "id": "cont-norte", "nombre": "Contenedores Barrio Norte (demo)", "tipo": "contenedor", "direccion": "Av. Ejemplo 456", "horario": "Las 24 horas", "descripcion": "Contenedores diferenciados de vidrio y papel.", "lat": -37.312, "lng": -59.128 },
+    { "id": "compostera", "nombre": "Compostera Comunitaria (demo)", "tipo": "compostera", "direccion": "Calle Verde 789", "horario": "Sábados de 10:00 a 13:00", "descripcion": "Restos orgánicos de cocina y poda.", "lat": -37.328, "lng": -59.122 }
+  ],
+  "fechas_clave": [
+    { "id": "d-ambiente", "fecha": "06-05", "titulo": "Día Mundial del Medio Ambiente", "descripcion": "Jornada de actividades en la plaza central (demo)." },
+    { "id": "d-arbol", "fecha": "08-29", "titulo": "Día del Árbol", "descripcion": "Plantación comunitaria con escuelas (demo)." }
+  ],
+  "eventos": [
+    { "id": "ev-eco-canje", "fecha": "2026-11-14", "titulo": "Eco-canje en la plaza", "lugar": "Plaza central", "organiza": "Escuela N°1 (demo)", "descripcion": "Traé materiales reciclables limpios y canjealos por plantines." },
+    { "id": "ev-taller", "fecha": "2026-12-05", "titulo": "Taller de compostaje", "lugar": "Compostera comunitaria", "organiza": "Municipio (demo)", "descripcion": "Aprendé a hacer compost en casa." }
+  ],
+  "noticias": [
+    { "id": "n1", "fecha": "2026-10-10", "titulo": "Nuevo punto limpio en la plaza", "resumen": "Ya funciona el punto limpio de la plaza. Recibe pilas, electrónicos y materiales reciclables." },
+    { "id": "n2", "fecha": "2026-10-02", "titulo": "Campaña escolar de reciclaje", "resumen": "Las escuelas del distrito juntaron más de una tonelada de cartón en un mes." }
+  ]
+}
